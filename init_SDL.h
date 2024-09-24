@@ -17,6 +17,7 @@ enum SDL_init_codes{
     TEXTURE_FAILED
 };
 
+
 typedef struct{
     SDL_Renderer *renderer;
     SDL_Window *window;
