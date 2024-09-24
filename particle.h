@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #define G 1
 #define dT 0.001

@@ -41,6 +41,7 @@ void init_swarm(Swarm *swarm, int x_min, int x_max, int y_min, int y_max, int ma
 
 void update_swarm_chunk(void *data){
     Update_data *data_for_update = (Update_data*)data;
+    if(data_for_update->swarm == NULL) return;
     int starting_pos = data_for_update->starting_pos;
     for(int i = 0; i<data_for_update->num_to_update; i++){
         update_particle(

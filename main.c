@@ -8,7 +8,7 @@
 #include "queue.h"
 
 #ifndef NUM_OF_THREADS
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS 1
 #endif
 
 #ifndef NUM_OF_PARTICLES
@@ -27,13 +27,11 @@ void thread_routine(void *data){
             WaitForSingleObject(task_queue_mutex, INFINITE);
             Task *current_task = pop_task(task_queue);
             ReleaseMutex(task_queue_mutex);
-            if(current_task == NULL) break; // We thought that there was a task but there wasn't
-            //Executing current task...
+            if(current_task == NULL) break; // We thought that there was a task but there wasn't, so we we wait until tasks are pushed to queue...
+            // Executing current task...
             current_task->routine(current_task->data);
             free((void*)current_task);
         }
-        printf("No tasks left, imma wait for a bit...\n");
-        printf("Going back to start of the loop and waiting again for signal...\n");
     }
 }
 
@@ -43,12 +41,12 @@ void schedule_tasks(void *data){
     Queue *queue = scheduler_arg->queue;
     Task *current_task;
     Update_data *current_data;
+    int status;
 
     int num_of_particles_to_schedule = NUM_OF_PARTICLES;
     int avg_chunk_size = (NUM_OF_PARTICLES / NUM_OF_THREADS) + 1; // Could this be pre-computed on compile time?
 
     while(num_of_particles_to_schedule != 0){
-        
         if(num_of_particles_to_schedule > avg_chunk_size){
             num_of_particles_to_schedule -= avg_chunk_size;
             current_data = create_update_data(swarm, num_of_particles_to_schedule, avg_chunk_size);
@@ -63,6 +61,7 @@ void schedule_tasks(void *data){
             WaitForSingleObject(task_queue_mutex, INFINITE);
             push_task(queue, current_task);
         }
+
         ReleaseMutex(task_queue_mutex);
         SetEvent(task_added_event);
     }
@@ -70,7 +69,7 @@ void schedule_tasks(void *data){
     current_task = create_task(data, schedule_tasks);
     WaitForSingleObject(task_queue_mutex, INFINITE);
     push_task(queue, current_task);
-    ReleaseMutex(task_queue_mutex);
+    status = ReleaseMutex(task_queue_mutex);
     SetEvent(task_added_event);
 }
 
@@ -109,12 +108,20 @@ int main(int argc, char **argv){
         }
     }
 
-    task_queue_mutex = CreateMutex(NULL, true, NULL);
+    task_queue_mutex = CreateMutex(NULL, false, NULL);
     if(task_queue_mutex == NULL){
         printf("Failed to create task queue mutex...\n");
         return EXIT_FAILURE;
     }
 
+    // This part is used for debugging how scheduler distributes tasks to threads...
+    // That is why swarm pointer is NULL, in that case updating function will skip calculations...
+    Scheduler_arg sched_arg =  {
+        .queue = &task_queue,
+        .swarm = NULL
+    };
+
+    schedule_tasks((void*)&sched_arg);
 
     // Main app loop
     while(true){

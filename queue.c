@@ -18,17 +18,17 @@ void push_task(Queue *queue, Task *task){
     if(queue->len == 0){
         queue->first = task;
         queue->last = task;
-        queue->len++;
     }
     else{
         queue->last->next_task = task;
         queue->last = task;
     }
+    queue->len++;
 }
 
 Task *pop_task(Queue *queue){
+    if(queue->len == 0) return NULL;
     Task *ret = queue->first;
-    queue->first == NULL;
     queue->first = ret->next_task;
     queue->len--;
     return ret;
