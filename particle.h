@@ -20,5 +20,12 @@ typedef struct Particle
     float mass;
 } Particle;
 
+typedef struct Swarm
+{
+    Particle *swarm;
+    int num_of_particles;
+} Swarm;
+
+
 void init_particle(int x, int y, float mass, Particle *p);
-void update_particle(Particle *particle, Particle *particle_list, int num_of_particles);
+void update_particle(Particle *particle, Particle *swarm, int num_of_particles);

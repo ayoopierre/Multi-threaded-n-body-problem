@@ -11,13 +11,13 @@ void init_particle(int x, int y, float mass, Particle *p){
     p->y = y;
 }
 
-void update_particle(Particle *particle, Particle *particle_list, int num_of_particles){
+void update_particle(Particle *particle, Particle *swarm, int num_of_particles){
     for(int i = 0; i<num_of_particles; i++){
-        if(particle == &particle_list[i]) continue;
-        float delta_x = particle->x - particle_list[i].x;
-        float delta_y = particle->y - particle_list[i].y;
+        if(particle == &swarm[i]) continue;
+        float delta_x = particle->x - swarm[i].x;
+        float delta_y = particle->y - swarm[i].y;
         float r_2 = delta_x * delta_x + delta_y * delta_y;
-        float a = (G * particle_list[i].mass) / (r_2 * r_2);
+        float a = (G * swarm[i].mass) / (r_2 * r_2);
 
         particle->a_x = a * delta_x;
         particle->a_y = a * delta_y;
