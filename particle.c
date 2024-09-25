@@ -1,6 +1,6 @@
 #include "particle.h"
 
-void init_particle(int x, int y, float mass, Particle *p){
+void init_particle(float x, float y, float mass, Particle *p){
     p->a_x = 0;
     p->a_y = 0;
     p->v_x = 0;
@@ -12,9 +12,9 @@ void init_particle(int x, int y, float mass, Particle *p){
 }
 
 
-void update_particle(Particle *particle, Particle *read_only_swarm, int num_of_particles){
+void update_particle(Particle *particle, Particle *read_only_swarm, int num_of_particles, int particle_index){
     for(int i = 0; i<num_of_particles; i++){
-        if(particle == &read_only_swarm[i]) continue;
+        if(particle_index == i) continue;
         float delta_x = particle->x - read_only_swarm[i].x;
         float delta_y = particle->y - read_only_swarm[i].y;
         float r_2 = delta_x * delta_x + delta_y * delta_y;
@@ -31,7 +31,7 @@ void update_particle(Particle *particle, Particle *read_only_swarm, int num_of_p
 }
 
 
-void init_swarm(Swarm *swarm, int x_min, int x_max, int y_min, int y_max, int mass_min, int mass_max, int num_of_particles){
+void init_swarm(Swarm *swarm, float x_min, float x_max, float y_min, float y_max, float mass_min, float mass_max, int num_of_particles){
     swarm->num_of_particles = num_of_particles;
     swarm->swarm = (Particle *)malloc(sizeof(Particle) * num_of_particles);
     swarm->read_only_swarm = (Particle *)malloc(sizeof(Particle) * num_of_particles);
@@ -44,8 +44,8 @@ void init_swarm(Swarm *swarm, int x_min, int x_max, int y_min, int y_max, int ma
         p->v_y = 0;
         p->mass = (float)rand() / ((float)RAND_MAX / (mass_max - mass_min)) + mass_min;
         p->radius = 1;
-        p->x = rand() / RAND_MAX * 600;
-        p->y = rand() / RAND_MAX * 800;
+        p->x = (float)rand() / ((float)RAND_MAX / (x_max - x_min)) + x_min;
+        p->y = (float)rand() / ((float)RAND_MAX / (y_max - y_min)) + y_min;
     }
 
     memcpy(swarm->read_only_swarm, swarm->swarm, sizeof(Particle) * num_of_particles);
@@ -61,7 +61,8 @@ void update_swarm_chunk(void *data){
         update_particle(
             &data_for_update->swarm->swarm[starting_pos + i], 
             data_for_update->swarm->read_only_swarm, 
-            data_for_update->swarm->num_of_particles
+            data_for_update->swarm->num_of_particles,
+            data_for_update->starting_pos + i
             );
     };
     ReleaseMutex(data_for_update->chunk_mutex);
