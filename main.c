@@ -21,18 +21,37 @@ HANDLE task_added_event;
 
 void thread_routine(void *data){
     Queue *task_queue = (Queue*)data;
+
     while(true){
+        // Waiting until there is task to take from queue. Signaled from scheduling task...
         WaitForSingleObject(task_added_event, INFINITE);
+
+        // While there are tasks inside the queue, we try to take a task...
         while(task_queue->len > 0){
+            // Waiting for mutex, to lock the queue. After we acuire lock we can pop a task, and realese lock instantly...
             WaitForSingleObject(task_queue_mutex, INFINITE);
             Task *current_task = pop_task(task_queue);
             ReleaseMutex(task_queue_mutex);
-            if(current_task == NULL) break; // We thought that there was a task but there wasn't, so we we wait until tasks are pushed to queue...
+
+            // We thought that there was a task but there wasn't, so we we breake of loop...
+            if(current_task == NULL) break;
+
             // Executing current task...
             current_task->routine(current_task->data);
             free((void*)current_task);
         }
     }
+}
+
+// This function should be somewhere inside particle.h
+void update_swarm_state(void *data){
+    // Copying swarm particle buffer into read-only particle buffer...
+    // This needs to be performed when all threads finish working with swarm...
+    Swarm *swarm = (Swarm*)data;
+    if(swarm == NULL) return;
+    WaitForMultipleObjects(NUM_OF_THREADS, particle_chunk_mutex, true, INFINITE);
+    memcpy(swarm->read_only_swarm, swarm->swarm, swarm->num_of_particles * sizeof(Particle));
+    for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
 }
 
 void schedule_tasks(void *data){
@@ -41,35 +60,44 @@ void schedule_tasks(void *data){
     Queue *queue = scheduler_arg->queue;
     Task *current_task;
     Update_data *current_data;
-    int status;
 
+    // Calculating how many particles should one thread take...
+    // Its probably not the best solution but works well is there is much more particles than threads...
     int num_of_particles_to_schedule = NUM_OF_PARTICLES;
     int avg_chunk_size = (NUM_OF_PARTICLES / NUM_OF_THREADS) + 1; // Could this be pre-computed on compile time?
+    int mutex_num = NUM_OF_THREADS;
 
     while(num_of_particles_to_schedule != 0){
         if(num_of_particles_to_schedule > avg_chunk_size){
             num_of_particles_to_schedule -= avg_chunk_size;
-            current_data = create_update_data(swarm, num_of_particles_to_schedule, avg_chunk_size);
+            current_data = create_update_data(swarm, num_of_particles_to_schedule, avg_chunk_size, particle_chunk_mutex[mutex_num]);
             current_task = create_task((void*)current_data, update_swarm_chunk);
             WaitForSingleObject(task_queue_mutex, INFINITE);
             push_task(queue, current_task);
         }
         else{
-            current_data = create_update_data(swarm, 0, num_of_particles_to_schedule);
+            current_data = create_update_data(swarm, 0, num_of_particles_to_schedule, particle_chunk_mutex[mutex_num]);
             current_task = create_task((void*)current_data, update_swarm_chunk);
             num_of_particles_to_schedule = 0;
             WaitForSingleObject(task_queue_mutex, INFINITE);
             push_task(queue, current_task);
         }
 
+        mutex_num--;
         ReleaseMutex(task_queue_mutex);
         SetEvent(task_added_event);
     }
+    current_task = create_task((void*)swarm, update_swarm_state);
+    WaitForSingleObject(task_queue_mutex, INFINITE);
+    push_task(queue, current_task);
+    ReleaseMutex(task_queue_mutex);
+    SetEvent(task_added_event);
 
+    // At the end we add scheduling task...
     current_task = create_task(data, schedule_tasks);
     WaitForSingleObject(task_queue_mutex, INFINITE);
     push_task(queue, current_task);
-    status = ReleaseMutex(task_queue_mutex);
+    ReleaseMutex(task_queue_mutex);
     SetEvent(task_added_event);
 }
 
@@ -89,7 +117,7 @@ int main(int argc, char **argv){
     init_queue(&task_queue);
     task_added_event = CreateEvent(NULL, false, false, NULL); // Configuration: auto event reset.
 
-    //Setting up threads
+    //Setting up threads and mutexes
     HANDLE threads[NUM_OF_THREADS];
 
     for(int i = 0; i<NUM_OF_THREADS; i++){
@@ -125,7 +153,7 @@ int main(int argc, char **argv){
 
     // Main app loop
     while(true){
-
+        
         if(!update_app(&app)){
             break;
         }

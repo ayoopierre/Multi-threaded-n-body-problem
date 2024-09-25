@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <Windows.h>
 
 #define G 1
 #define dT 0.001
@@ -36,6 +37,7 @@ typedef struct Update_data
     Swarm *swarm;
     int starting_pos;
     int num_to_update;
+    HANDLE chunk_mutex;
 } Update_data;
 
 
@@ -45,4 +47,4 @@ void update_particle(Particle *particle, Particle *read_only_swarm, int num_of_p
 void init_swarm(Swarm *swarm, int x_min, int x_max, int y_min, int y_max, int mass_min, int mass_max, int num_of_particles);
 void update_swarm_chunk(void *data);
 
-Update_data *create_update_data(Swarm *swarm, int starting_pos, int num_to_update);
+Update_data *create_update_data(Swarm *swarm, int starting_pos, int num_to_update, HANDLE chunk_mutex);
