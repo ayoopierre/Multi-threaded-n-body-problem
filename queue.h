@@ -1,5 +1,9 @@
 #include <stdlib.h>
 #include "particle.h"
+#include "init_SDL.h"
+
+#ifndef QUEUE_H
+#define QUEUE_H
 
 #define NUM_OF_THREADS 4
 
@@ -22,8 +26,11 @@ typedef struct Queue{
 typedef struct Scheduler_arg{
     Swarm *swarm;
     Queue *queue;
+    App *app;
 } Scheduler_arg;
 
 void init_queue(Queue *queue);
 void push_task(Queue *queue, Task *task);
 Task *pop_task(Queue *queue);
+
+#endif

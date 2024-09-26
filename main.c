@@ -2,10 +2,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
-#include "init_SDL.h"
-
 #include <Windows.h>
+#include "init_SDL.h"
 #include "queue.h"
+#include "particle.h"
 
 #ifndef NUM_OF_THREADS
 #define NUM_OF_THREADS 1
@@ -47,11 +47,15 @@ void thread_routine(void *data){
 void update_swarm_state(void *data){
     // Copying swarm particle buffer into read-only particle buffer...
     // This needs to be performed when all threads finish working with swarm...
-    Swarm *swarm = (Swarm*)data;
+    Scheduler_arg *scheduler_arg = (Scheduler_arg*)data;
+    Swarm *swarm = scheduler_arg->swarm;
+    App* app = scheduler_arg->app;
+
     if(swarm == NULL) return;
+
     WaitForMultipleObjects(NUM_OF_THREADS, particle_chunk_mutex, true, INFINITE);
     memcpy(swarm->read_only_swarm, swarm->swarm, swarm->num_of_particles * sizeof(Particle));
-    //printf("x: %f, y: %f, mass:%f\n", swarm->read_only_swarm[1].x, swarm->read_only_swarm[1].y, swarm->read_only_swarm[1].mass);
+    printf("x: %f, y: %f, mass:%f\n", swarm->read_only_swarm[1].x, swarm->read_only_swarm[1].y, swarm->read_only_swarm[1].mass);
     for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
 }
 
@@ -68,6 +72,7 @@ void schedule_tasks(void *data){
     int avg_chunk_size = (NUM_OF_PARTICLES / NUM_OF_THREADS) + 1; // Could this be pre-computed on compile time?
     int mutex_num = NUM_OF_THREADS;
 
+    //Scheduling tasks to calculate particle movement...
     while(num_of_particles_to_schedule != 0){
         if(num_of_particles_to_schedule > avg_chunk_size){
             num_of_particles_to_schedule -= avg_chunk_size;
@@ -88,13 +93,15 @@ void schedule_tasks(void *data){
         ReleaseMutex(task_queue_mutex);
         SetEvent(task_added_event);
     }
-    current_task = create_task((void*)swarm, update_swarm_state);
+
+    // Scheduling task to update read-only buffer, and copy particle data to app...
+    current_task = create_task((void*)data, update_swarm_state);
     WaitForSingleObject(task_queue_mutex, INFINITE);
     push_task(queue, current_task);
     ReleaseMutex(task_queue_mutex);
     SetEvent(task_added_event);
 
-    // At the end we add scheduling task...
+    // At the end we add scheduling task again...
     current_task = create_task(data, schedule_tasks);
     WaitForSingleObject(task_queue_mutex, INFINITE);
     push_task(queue, current_task);
@@ -150,7 +157,8 @@ int main(int argc, char **argv){
     // That is why swarm pointer is NULL, in that case updating function will skip calculations...
     Scheduler_arg sched_arg =  {
         .queue = &task_queue,
-        .swarm = &swarm
+        .swarm = &swarm,
+        .app = &app
     };
 
     schedule_tasks((void*)&sched_arg);

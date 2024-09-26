@@ -3,6 +3,9 @@
 #include <SDL2/SDL.h>
 #include <string.h>
 
+#ifndef INIT_SDL_H
+#define INIT_SDL_H
+
 #define WINDOW_HEIGHT 600
 #define WINDOW_WIDTH 800
 #define FPS 20
@@ -35,3 +38,5 @@ void close_app(App *app);
 void write_buffer_to_texture(App *app);
 void update_graphics(App *app);
 bool handle_input(App *app);
+
+#endif

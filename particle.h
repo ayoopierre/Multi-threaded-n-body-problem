@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <Windows.h>
 
+#ifndef PARTICLE_H
+#define PARTICLE_H
+
 #define G 0.0000000001
 #define dT 0.001
 #define NUM_OF_PARTICLES 1000 // For 2000 we still get multiple simulations per frame
@@ -48,3 +51,5 @@ void init_swarm(Swarm *swarm, float x_min, float x_max, float y_min, float y_max
 void update_swarm_chunk(void *data);
 
 Update_data *create_update_data(Swarm *swarm, int starting_pos, int num_to_update, HANDLE chunk_mutex);
+
+#endif

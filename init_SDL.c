@@ -1,5 +1,6 @@
 #include "init_SDL.h"
 
+
 int init_app(App *app){
     app->fps = FPS;
 
