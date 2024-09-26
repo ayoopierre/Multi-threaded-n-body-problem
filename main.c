@@ -8,11 +8,11 @@
 #include "particle.h"
 
 #ifndef NUM_OF_THREADS
-#define NUM_OF_THREADS 1
+#define NUM_OF_THREADS 4
 #endif
 
 #ifndef NUM_OF_PARTICLES
-#define NUM_OF_PARTICLES 100
+#define NUM_OF_PARTICLES 1000
 #endif
 
 HANDLE particle_chunk_mutex[NUM_OF_THREADS];
@@ -57,6 +57,11 @@ void update_swarm_state(void *data){
     memcpy(swarm->read_only_swarm, swarm->swarm, swarm->num_of_particles * sizeof(Particle));
     printf("x: %f, y: %f, mass:%f\n", swarm->read_only_swarm[1].x, swarm->read_only_swarm[1].y, swarm->read_only_swarm[1].mass);
     for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
+    if(app->flag == DATA_REQUESTED){
+         memcpy(app->swarm, swarm->read_only_swarm, sizeof(Particle) * swarm->num_of_particles);
+        SetEvent(app->buffer_copied_event);
+        printf("Copied to app...\n");
+    }
 }
 
 void schedule_tasks(void *data){

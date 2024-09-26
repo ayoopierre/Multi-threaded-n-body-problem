@@ -30,6 +30,11 @@ int init_app(App *app){
     app->buffer = malloc(sizeof(uint32_t) * WINDOW_HEIGHT * WINDOW_WIDTH);
     app->last_x_mouse = -1;
     app->last_y_mouse = -1;
+
+    app->flag = IDLE;
+    app->buffer_copied_event = CreateEvent(NULL, false, false, NULL);
+    app->swarm = (Particle*)malloc(sizeof(Particle) * NUM_OF_PARTICLES);
+
     return SDL_SUCCSSES;
 }
 
@@ -41,6 +46,7 @@ bool update_app(App *app){
     if(curr_fps < app->fps){
         printf("FPS: %f\n", curr_fps);
         // get data from simulation to draw an image
+        update_graphics(app);
         write_buffer_to_texture(app);
         SDL_RenderClear(app->renderer);
         SDL_RenderCopy(app->renderer, app->texture, NULL, NULL);
@@ -61,7 +67,11 @@ void write_buffer_to_texture(App *app){
 }
 
 void update_graphics(App *app){
+    app->flag = DATA_REQUESTED;
+    WaitForSingleObject(app->buffer_copied_event, INFINITE);
+    app->flag = IDLE;
 
+    // Now write data to buffer according to particles postions...
 }
 
 bool handle_input(App *app){
@@ -70,6 +80,7 @@ bool handle_input(App *app){
     Uint32 state = SDL_GetMouseState(&x_mouse, &y_mouse);
     //handle mouse movements
 
+    //
     app->last_x_mouse = x_mouse;
     app->last_y_mouse = y_mouse;
 

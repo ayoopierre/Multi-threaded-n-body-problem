@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <string.h>
+#include <Windows.h>
+#include "particle.h"
 
 #ifndef INIT_SDL_H
 #define INIT_SDL_H
@@ -20,6 +22,11 @@ enum SDL_init_codes{
     TEXTURE_FAILED
 };
 
+enum Graphics_state{
+    IDLE,
+    DATA_REQUESTED
+};
+
 
 typedef struct{
     SDL_Renderer *renderer;
@@ -30,6 +37,9 @@ typedef struct{
     int last_x_mouse;
     int last_y_mouse;
     int fps;
+    Particle *swarm;
+    HANDLE buffer_copied_event;
+    int flag;
 } App;
 
 int init_app(App *app);
