@@ -58,7 +58,7 @@ void update_swarm_state(void *data){
     printf("x: %f, y: %f, mass:%f\n", swarm->read_only_swarm[1].x, swarm->read_only_swarm[1].y, swarm->read_only_swarm[1].mass);
     for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
     if(app->flag == DATA_REQUESTED){
-         memcpy(app->swarm, swarm->read_only_swarm, sizeof(Particle) * swarm->num_of_particles);
+        memcpy(app->swarm, swarm->read_only_swarm, sizeof(Particle) * swarm->num_of_particles);
         SetEvent(app->buffer_copied_event);
         printf("Copied to app...\n");
     }

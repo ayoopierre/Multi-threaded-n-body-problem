@@ -99,6 +99,10 @@ bool handle_input(App *app){
 }
 
 void close_app(App *app){
+    SDL_DestroyTexture(app->texture);
     SDL_DestroyRenderer(app->renderer);
     SDL_DestroyWindow(app->window);
+    CloseHandle(app->buffer_copied_event);
+    free(app->buffer);
+    free(app->swarm);
 }
