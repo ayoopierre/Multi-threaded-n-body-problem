@@ -47,6 +47,7 @@ bool update_app(App *app);
 void close_app(App *app);
 void write_buffer_to_texture(App *app);
 void update_graphics(App *app);
+void draw_circle_to_buffer(App *app, float x, float y, float radius);
 bool handle_input(App *app);
 
 #endif

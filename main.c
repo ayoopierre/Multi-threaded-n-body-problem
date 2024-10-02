@@ -55,12 +55,10 @@ void update_swarm_state(void *data){
 
     WaitForMultipleObjects(NUM_OF_THREADS, particle_chunk_mutex, true, INFINITE);
     memcpy(swarm->read_only_swarm, swarm->swarm, swarm->num_of_particles * sizeof(Particle));
-    printf("x: %f, y: %f, mass:%f\n", swarm->read_only_swarm[1].x, swarm->read_only_swarm[1].y, swarm->read_only_swarm[1].mass);
     for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
     if(app->flag == DATA_REQUESTED){
         memcpy(app->swarm, swarm->read_only_swarm, sizeof(Particle) * swarm->num_of_particles);
         SetEvent(app->buffer_copied_event);
-        printf("Copied to app...\n");
     }
 }
 
@@ -112,6 +110,7 @@ void schedule_tasks(void *data){
     push_task(queue, current_task);
     ReleaseMutex(task_queue_mutex);
     SetEvent(task_added_event);
+    //printf("Executed scheduler task...\n");
 }
 
 int main(int argc, char **argv){
@@ -156,7 +155,7 @@ int main(int argc, char **argv){
     }
 
     Swarm swarm;
-    init_swarm(&swarm, 0, 1, 0, 1, 1, 5, NUM_OF_PARTICLES);
+    init_swarm(&swarm, 0, WINDOW_WIDTH, 0, WINDOW_HEIGHT, 1, 5, 1, 5,NUM_OF_PARTICLES);
 
     // This part is used for debugging how scheduler distributes tasks to threads...
     // That is why swarm pointer is NULL, in that case updating function will skip calculations...

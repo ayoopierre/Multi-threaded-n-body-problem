@@ -46,6 +46,7 @@ bool update_app(App *app){
     if(curr_fps < app->fps){
         printf("FPS: %f\n", curr_fps);
         // get data from simulation to draw an image
+        //memset(app->buffer, 0xFF00FFFF, sizeof(uint32_t) * WINDOW_HEIGHT * WINDOW_WIDTH);
         update_graphics(app);
         write_buffer_to_texture(app);
         SDL_RenderClear(app->renderer);
@@ -71,7 +72,30 @@ void update_graphics(App *app){
     WaitForSingleObject(app->buffer_copied_event, INFINITE);
     app->flag = IDLE;
 
+    if(app->swarm == NULL) return;
+
     // Now write data to buffer according to particles postions...
+    // It might be good idea to render some circles in additional threads.
+    // But still if there are N particles simulation needs to N^2 operations while rendering needs only N.
+    for(int i = 0; i<NUM_OF_PARTICLES; i++){
+        if(app->swarm[i].x + app->swarm[i].radius < 0 || app->swarm[i].x - app->swarm[i].radius > WINDOW_WIDTH) continue;
+        if(app->swarm[i].y + app->swarm[i].radius < 0 || app->swarm[i].y - app->swarm[i].radius > WINDOW_WIDTH) continue;
+        draw_circle_to_buffer(app, app->swarm[i].x, app->swarm[i].y, app->swarm[i].radius);
+    }
+}
+
+void draw_circle_to_buffer(App *app, float x, float y, float radius){
+    for(int i = x - radius; i < x + radius; i++){
+        for(int j = y - radius; j < y + radius; j++){
+            // if current pixel is not in the window, we skip it...
+            if(i < 0 || i >= WINDOW_WIDTH) continue;
+            if(j < 0 || j >=  WINDOW_HEIGHT) continue;
+            // we check whether current pixel from bounding box of a circle is inside a circle...
+            if((i - x) * (i - x) + (j - y) * (j - y) < radius * radius){ 
+                app->buffer[i + j * WINDOW_WIDTH] = 0x0000FFFF;
+            }
+        }
+    }
 }
 
 bool handle_input(App *app){
