@@ -7,8 +7,8 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
-#define G 0.000001
-#define dT 0.01
+#define G 0.001
+#define dT 1
 #define NUM_OF_PARTICLES 1000 // For 2000 we still get multiple simulations per frame
 
 

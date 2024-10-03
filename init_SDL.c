@@ -52,6 +52,7 @@ bool update_app(App *app){
         SDL_RenderClear(app->renderer);
         SDL_RenderCopy(app->renderer, app->texture, NULL, NULL);
         SDL_RenderPresent(app->renderer);
+        memset(app->buffer, 0, sizeof(uint32_t)*WINDOW_HEIGHT*WINDOW_WIDTH);
         app->last_tick = SDL_GetPerformanceCounter();
     }
     return handle_input(app);

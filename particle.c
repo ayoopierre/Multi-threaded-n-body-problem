@@ -35,6 +35,7 @@ void update_particle(Particle *particle, Particle *read_only_swarm, int num_of_p
 
         particle->a_x += a * delta_x;
         particle->a_y += a * delta_y;
+        //printf("%5.15f, %5.15f\n", particle->a_x, particle->a_y);
     }
 
     particle->v_x += particle->a_x * dT;

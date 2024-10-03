@@ -56,6 +56,7 @@ void update_swarm_state(void *data){
     WaitForMultipleObjects(NUM_OF_THREADS, particle_chunk_mutex, true, INFINITE);
     memcpy(swarm->read_only_swarm, swarm->swarm, swarm->num_of_particles * sizeof(Particle));
     for(int i = 0; i<NUM_OF_THREADS; i++) ReleaseMutex(particle_chunk_mutex[i]);
+    int ret = memcmp(swarm->swarm, swarm->read_only_swarm, swarm->num_of_particles * sizeof(Particle));
     if(app->flag == DATA_REQUESTED){
         memcpy(app->swarm, swarm->read_only_swarm, sizeof(Particle) * swarm->num_of_particles);
         SetEvent(app->buffer_copied_event);
@@ -110,7 +111,6 @@ void schedule_tasks(void *data){
     push_task(queue, current_task);
     ReleaseMutex(task_queue_mutex);
     SetEvent(task_added_event);
-    //printf("Executed scheduler task...\n");
 }
 
 int main(int argc, char **argv){
