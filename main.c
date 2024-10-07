@@ -63,6 +63,14 @@ void update_swarm_state(void *data){
     }
 }
 
+void add_task(Queue *queue, void *data, void (*function)(void *)){
+    Task *current_task = create_task(data, function);
+    WaitForSingleObject(task_queue_mutex, INFINITE);
+    push_task(queue, current_task);
+    ReleaseMutex(task_queue_mutex);
+    SetEvent(task_added_event);
+}
+
 void schedule_tasks(void *data){
     Scheduler_arg *scheduler_arg = (Scheduler_arg*)data;
     Swarm *swarm = scheduler_arg->swarm;
@@ -81,36 +89,19 @@ void schedule_tasks(void *data){
         if(num_of_particles_to_schedule > avg_chunk_size){
             num_of_particles_to_schedule -= avg_chunk_size;
             current_data = create_update_data(swarm, num_of_particles_to_schedule, avg_chunk_size, particle_chunk_mutex[mutex_num]);
-            current_task = create_task((void*)current_data, update_swarm_chunk);
-            WaitForSingleObject(task_queue_mutex, INFINITE);
-            push_task(queue, current_task);
+            add_task(queue, current_data, update_swarm_chunk);
         }
         else{
             current_data = create_update_data(swarm, 0, num_of_particles_to_schedule, particle_chunk_mutex[mutex_num]);
-            current_task = create_task((void*)current_data, update_swarm_chunk);
             num_of_particles_to_schedule = 0;
-            WaitForSingleObject(task_queue_mutex, INFINITE);
-            push_task(queue, current_task);
+            add_task(queue, current_data, update_swarm_chunk);
         }
-
         mutex_num--;
-        ReleaseMutex(task_queue_mutex);
-        SetEvent(task_added_event);
     }
-
     // Scheduling task to update read-only buffer, and copy particle data to app...
-    current_task = create_task((void*)data, update_swarm_state);
-    WaitForSingleObject(task_queue_mutex, INFINITE);
-    push_task(queue, current_task);
-    ReleaseMutex(task_queue_mutex);
-    SetEvent(task_added_event);
-
+    add_task(queue, data, update_swarm_state);
     // At the end we add scheduling task again...
-    current_task = create_task(data, schedule_tasks);
-    WaitForSingleObject(task_queue_mutex, INFINITE);
-    push_task(queue, current_task);
-    ReleaseMutex(task_queue_mutex);
-    SetEvent(task_added_event);
+    add_task(queue, data, schedule_tasks);
 }
 
 int main(int argc, char **argv){
